@@ -54,7 +54,7 @@
     }
 
     function makeId(prefix = "id") {
-      if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
       return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
     }
 
@@ -70,7 +70,7 @@
     function inactivityStatus(lastContactDate, enrollmentDate) {
       const baseDate = lastContactDate || enrollmentDate;
       const days = daysSince(baseDate);
-      if (days === null) return { label: "No contact recorded", color: "bg-slate-700 text-slate-100", level: "none", days: null };
+      if (days === null) return { label: "No contact recorded", color: "bg-slate-700 text-slate-100 border-slate-600", level: "none", days: null };
 
       if (days >= 90) {
         return {
@@ -109,10 +109,6 @@
       { value: "Completed", label: "Completed", color: "bg-emerald-500/15 text-emerald-200 border-emerald-400/70" },
       { value: "Unsuccessful", label: "Unsuccessful", color: "bg-rose-500/15 text-rose-200 border-rose-400/70" },
     ];
-
-    function statusColor(status) {
-      return STATUS_OPTIONS.find(s => s.value === status)?.color || "bg-slate-700 text-slate-100 border-slate-600";
-    }
 
     function App() {
       const [cases, setCases] = useState([]);
@@ -217,7 +213,6 @@
               : c
           )
         );
-        // If activity has a date, also update lastContactDate
         if (newActivity.date) {
           updateSelectedCase("lastContactDate", newActivity.date);
         }
@@ -501,4 +496,89 @@
                       <div className="flex justify-end mt-1">
                         <button
                           onClick={addActivity}
-                          className="px-3 py
+                          className="px-3 py-1.5 text-xs rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-semibold"
+                        >
+                          Add Activity
+                        </button>
+                      </div>
+
+                      <div className="mt-3 max-h-64 overflow-auto space-y-2 text-xs">
+                        {(selectedCase.activities || []).length === 0 && (
+                          <div className="text-[11px] text-slate-500">
+                            No activities recorded yet. Add monthly contacts, ISS updates, training, etc.
+                          </div>
+                        )}
+                        {selectedCase.activities?.map(act => (
+                          <div
+                            key={act.id}
+                            className="border border-slate-700 rounded-xl px-3 py-2 bg-slate-900 flex flex-col gap-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <div className="font-semibold text-slate-100">
+                                  {act.label}
+                                </div>
+                                <div className="text-[10px] text-slate-400">
+                                  Date: {act.date || "—"}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="inline-flex items-center gap-1">
+                                  {STATUS_OPTIONS.map(s => (
+                                    <label
+                                      key={s.value}
+                                      className={`
+                                        inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] cursor-pointer
+                                        ${
+                                          act.status === s.value
+                                            ? s.color
+                                            : "bg-slate-900 border-slate-600 text-slate-300 hover:border-emerald-400/70"
+                                        }
+                                      `}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="h-3 w-3 accent-emerald-500"
+                                        checked={act.status === s.value}
+                                        onChange={() => updateActivity(act.id, { status: s.value })}
+                                      />
+                                      <span>{s.label}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                                <button
+                                  onClick={() => deleteActivity(act.id)}
+                                  className="text-slate-500 hover:text-red-400 text-xs"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                            {act.notes && (
+                              <div className="text-[11px] text-slate-200 mt-1">
+                                {act.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 text-sm text-slate-300">
+                    Select a participant from your caseload or add a new one to begin tracking activities and inactivity.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
+
